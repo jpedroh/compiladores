@@ -1,5 +1,9 @@
 package br.ufpe.cin.compiladores;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -8,9 +12,19 @@ import java.util.Stack;
 public class Main {
     private static final Map<Character, Operacao> operacoes = new HashMap<>();
 
-    public static void main(String[] args) {
+    private static InputStream fromStdIn() {
+        return System.in;
+    }
+
+    private static File fromResourceFile() {
+        URL url = Main.class.getClassLoader().getResource("Expressao.stk");
+        assert url != null;
+        return new File(url.getPath());
+    }
+
+    public static void main(String[] args) throws FileNotFoundException {
         final Stack<Integer> pilha = new Stack<>();
-        final Scanner in = new Scanner(System.in);
+        final Scanner in = new Scanner(fromResourceFile());
 
         operacoes.put('+', (x, y) -> x + y);
         operacoes.put('-', (x, y) -> x - y);
