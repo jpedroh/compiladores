@@ -1,5 +1,11 @@
 package br.ufpe.cin.compiladores;
 
+import br.ufpe.cin.compiladores.core.Operacao;
+import br.ufpe.cin.compiladores.lexer.InvalidTokenException;
+import br.ufpe.cin.compiladores.lexer.Token;
+import br.ufpe.cin.compiladores.lexer.TokenFactory;
+import br.ufpe.cin.compiladores.lexer.TokenType;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -10,7 +16,7 @@ import java.util.Scanner;
 import java.util.Stack;
 
 public class Main {
-    private static final Map<Character, Operacao> operacoes = new HashMap<>();
+    private static final Map<TokenType, Operacao> operacoes = new HashMap<>();
 
     private static InputStream fromStdIn() {
         return System.in;
@@ -23,31 +29,35 @@ public class Main {
     }
 
     public static void main(String[] args) throws FileNotFoundException {
-        final Stack<Integer> pilha = new Stack<>();
+        final Stack<Token> pilha = new Stack<>();
         final Scanner in = new Scanner(fromResourceFile());
 
-        operacoes.put('+', (x, y) -> x + y);
-        operacoes.put('-', (x, y) -> x - y);
-        operacoes.put('*', (x, y) -> x * y);
-        operacoes.put('/', (x, y) -> x / y);
+        operacoes.put(TokenType.PLUS, (x, y) -> x + y);
+        operacoes.put(TokenType.MINUS, (x, y) -> x - y);
+        operacoes.put(TokenType.STAR, (x, y) -> x * y);
+        operacoes.put(TokenType.SLASH, (x, y) -> x / y);
 
         while (in.hasNext()) {
-            if (in.hasNextInt()) {
-                int valor = in.nextInt();
-                pilha.push(valor);
-            } else {
-                char operador = in.next().charAt(0);
-                int x = pilha.pop();
-                int y = pilha.pop();
-                pilha.push(operacoes.get(operador).operar(x, y));
+            try {
+                String lexeme = in.next();
+                Token token = TokenFactory.buildToken(lexeme);
+                System.out.println(token);
+
+                if (token.type == TokenType.NUM) {
+                    pilha.push(token);
+                } else {
+                    int x = Integer.parseInt(pilha.pop().lexeme);
+                    int y = Integer.parseInt(pilha.pop().lexeme);
+                    Integer resultado = operacoes.get(token.type).operar(x, y);
+                    Token tokenResultado = new Token(TokenType.NUM, resultado.toString());
+                    pilha.push(tokenResultado);
+                }
+            } catch (InvalidTokenException exception) {
+                System.out.println(exception);
+                return;
             }
         }
 
-        System.out.println(pilha.pop());
-    }
-
-    @FunctionalInterface
-    private interface Operacao {
-        int operar(int x, int y);
+        System.out.println(pilha.pop().lexeme);
     }
 }
